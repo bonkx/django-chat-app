@@ -1,0 +1,848 @@
+{% extends "partials/base.html" %}
+{% load static humanize general_function %}
+
+{% block title %}Chat Room{% endblock %}
+
+{% block css %}
+<!-- Magnific Popup core CSS file -->
+<link rel="stylesheet" href="{% static 'assets/css/magnific-popup.css' %}">
+
+<link rel="stylesheet" href="{% static 'assets/css/chat.css' %}" />
+
+<style>
+    .center-cropped {
+        height: 168px;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: 50% 50%;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Chat</h1>
+            </div>
+            <!-- /.col -->
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{% url "home" %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url "chat" %}">Chat</a></li>
+                    <li class="breadcrumb-item active">Room</li>
+                </ol>
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid" style="padding-top:20px;">
+
+        <div class="row">
+            <div class="col-md-4 col-sm-12">
+                <div class="card card-success card-outline direct-chat direct-chat-success">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            Chat
+                            <div class="small text-muted">
+                                List chat kamu
+                            </div>
+                        </h3>
+                        <div class="card-tools">
+                            <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal">
+                                <i class="fas fa-plus mr-2"></i>
+                                Add Contact
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-3">
+
+                        <table id="tableData" class="table table-borderless table-sm projects">
+                            <tbody>
+                                {% for row in object_list %}
+                                <tr class="clickable-row" style="cursor:pointer;"
+                                    data-href="{% url 'room' row.id.hex %}">
+                                    <td width="20%">
+                                        <img alt="{{row}}" class="table-avatar" src="{{avatar_list|random}}">
+                                    </td>
+                                    <td>
+                                        <a>
+                                            {% for usr  in row.members.all  %}
+                                            {% if usr != request.user %}
+                                            {{usr}}
+                                            {% endif %}
+                                            {% endfor %}
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{row.get_last_message|default_if_none:"Klik untuk memulai chating..."|truncatechars_html:30}}
+                                        </small>
+                                    </td>
+                                    <td width="15%" class="text-right exclude" style="vertical-align: top;">
+                                        <span class="small text-muted">
+                                            {{row.updated|date:"d M"}}
+                                        </span>
+                                        <br>
+                                        <div class="btn_hapus_chat">
+                                            <a class="btn btn-danger btn-sm" data-id="{{row.id}}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="100%" class="text-center">No Chat found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                    {% if object_list.has_other_pages %}
+                    <div class="card-footer">
+                        <ul class="pagination m-0 float-right">
+                            {% if object_list.has_previous %}
+                            <li class="page-item"><a class="page-link"
+                                    href="?{% query_transform page=object_list.previous_page_number %}">&laquo;</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#"><span>&laquo;</span></a>
+                            </li>
+                            {% endif %}
+                            {% for i in object_list.paginator.page_range %}
+                            {% if object_list.number == i %}
+                            <li class="page-item active"><a class="page-link " href="#"><span>{{ i }} <span
+                                            class="sr-only">(current)</span></span></a>
+                            </li>
+                            {% else %}
+                            <li class="page-item"><a class="page-link" href="?{% query_transform page=i %}">{{ i }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            {% if object_list.has_next %}
+                            <li class="page-item"><a class="page-link"
+                                    href="?{% query_transform page=object_list.next_page_number %}">&raquo;</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><a class="page-link" href="#">&raquo;</a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <div class="col-md-8 col-sm-12">
+                <!-- chat_details -->
+                <div class="card card-success card-outline direct-chat direct-chat-olive">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            {{str_room_name}}
+                            <div class="small text-muted" id="chat_status">
+                                Last Online {{last_seen|default_if_none:"..."|naturaltime}}
+                            </div>
+                            <div class="small text-muted" id="chat_typing" style="display:none">
+                                typing...
+                            </div>
+                        </h3>
+
+                        <div class="card-tools">
+                        </div>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+
+                        <div id='room-preview-img' style='display:none'>
+                            {% include 'chat/chat_preview_image.html' %}
+                        </div>
+
+                        <!-- Conversations are loaded here -->
+                        <div id="chat-messages" class="direct-chat-messages px-4 msg-box msg-box--background"
+                            style="height: 60vh; top:0px; bottom: 0px;">
+
+                            <div id="chat_loader" class="text-center">
+                                <i class="fa fa-spinner fa-spin" style="font-size:32px;color:red"></i>
+                            </div>
+
+                            <!-- chat component -->
+                            <div id="new-message-chat"></div>
+
+                        </div>
+                        <!--/.direct-chat-messages-->
+
+                        <!-- /.direct-chat-pane -->
+                    </div>
+                    <!-- /.card-body -->
+
+                    {% include 'chat/chat_input.html' %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <!-- /.content -->
+</section>
+<!-- /.content -->
+
+
+<div class="modal" id="myModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content modal-content-demo">
+            <div class="modal-header">
+                <h6 class="modal-title">Search for user to start chat</h6>
+                <button aria-label="Close" class="close" data-dismiss="modal" type="button"><span
+                        aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="card-body pb-2">
+                    <form method=POST action="#">
+                        {% csrf_token %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control border-right-0 pl-3" id="search" name="search"
+                                placeholder="Enter email/username" value="">
+                            <span class="input-group-append">
+                                <button class="btn ripple btn-primary" type="submit"><i
+                                        class="fa fa-search"></i></button>
+                            </span>
+                        </div>
+                    </form>
+
+                    <h6 class="pt-4 text-muted">Select email to start chat</h6>
+
+                    <table class="table" id="myTable">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th width="10%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="search-results">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+
+{% block js %}
+<!-- Magnific Popup core JS file -->
+<script src="{% static 'assets/js/jquery.magnific-popup.min.js' %}"></script>
+
+<script>
+    var tempDaysWeekdays = [];
+    const user_id = '{{request.user.id}}';
+    const room_name = '{{room_name}}'
+    const user_avatar = '{{user_avatar}}';
+    const member_avatar = '{{member_avatar}}';
+
+    var loc = window.location
+    var dateAux
+    var wsScheme = 'ws://'
+    var chatSocket
+    var chat_status = 'Last seen a day ago'
+    const chatDetails = document.querySelector('#chat_details')
+    const chatStatus = document.querySelector('#chat_status')
+    const messageInputDom = document.querySelector('#chat-message-input')
+
+    var groudID
+    var isTyping = false;
+    var memberIsOnline = false;
+    var isNotTyping;
+    var doneTypingInterval = 1000; //time in ms (1 seconds)
+
+    $(document).ready(function () {
+        $('#tableData td:not(.exclude)').click(function (e) {
+            if (!$(e.target).hasClass('exclude')) {
+                var _url = $(this).closest('tr').data("href")
+                //console.log(_url)
+                //console.log(e.target.tagName)
+                window.document.location = _url;
+            }
+        });
+
+        $('#myModal').on('shown.bs.modal', function () {
+            $('#search').focus();
+        });
+
+        if (loc.protocol == 'https:') {
+            wsScheme = 'wss://'
+        }
+
+        window.addEventListener("unload", function () {
+            if (chatSocket != null) {
+                if (chatSocket.readyState == WebSocket.OPEN)
+                    chatSocket.close();
+            }
+        });
+
+        loadMessages(room_name);
+        goRoomMsg();
+    });
+
+    $(document).on('submit', '#myModal', function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            type: 'POST',
+            url: '/ajax/search-user/',
+            data: {
+                search: $('#search').val(),
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+            },
+            success: function (data) {
+                console.log(data);
+                $('#search-results').empty();
+                $.each(data['data'], function (indexes, values) {
+                    console.log(values);
+                    var ctn = `
+                            <tr>
+                                <td>${values['email']}</td>
+                                <td>
+                                    <a class="btn btn-info btn-sm" href="/chat/add/${values['id']}/">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        `;
+                    $('#myTable > tbody:last-child').append(ctn);
+                });
+            }
+
+        });
+    });
+
+    function scrollToBottom() {
+        const element = $('#chat-messages');
+        element.animate({
+            scrollTop: element.prop("scrollHeight") * 4,
+        }, 1000);
+        //$('#chat-messages').scrollTop(1E10);
+    }
+
+    function focusMessageBox() {
+        document.querySelector('#chat-message-input').focus();
+    }
+
+
+    function loadMessages(id) {
+        wssUrl = wsScheme + loc.host + '/ws/chat/' + id + '/'
+        //console.log(wssUrl);
+        chatSocket = new WebSocket(wssUrl);
+
+        chatSocket.onopen = function (e) {
+            //console.log("Successfully connected to the WebSocket.");
+            /*chatSocket.send(JSON.stringify({
+                'command': 'online',
+                'online': true,
+            }));*/
+            chatSocket.send(JSON.stringify({
+                'command': 'fetch_messages',
+                'chat_type': 'chat',
+            }));
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            //console.log(data);
+
+            const chatData = data.data;
+            //console.log(chatData);
+            //const otherUser = data.data.other;
+
+            // change state of command
+            if (chatData.command === "online") {
+                /*if (chatData.online) {
+                    // if online
+                    if (chatData.online_user_id != user_id) {
+                        chat_status = 'Online';
+                        memberIsOnline = true;
+                    }
+                } else {
+                    // if offline
+                    if (chatData.online_user_id != user_id) {
+                        $("#chat_online").removeClass('bg-success').addClass('bg-secondary');
+                        //timeago last_login
+                        dateAux = moment(chatData.member.last_login, 'YYYY-MM-DD hh:mm:ss');
+                        chat_status = 'Last seen ' + dateAux.local().fromNow();
+                        memberIsOnline = false;
+                    }
+                }*/
+                // update chat status
+                chatStatus.innerHTML = chat_status;
+            } else if (chatData.command === "typing") {
+                /*if (chatData.typing) {
+                    if (chatData.user_id != user_id) {
+                        document.getElementById("chat_status").style.display = "none";
+                        document.getElementById("chat_typing").style.display = "block";
+                    }
+                } else {
+                    document.getElementById("chat_status").style.display = "block";
+                    document.getElementById("chat_typing").style.display = "none";
+                }*/
+            } else {
+                //show messages
+                //hide loader
+                document.getElementById("chat_loader").style.display = "none";
+
+                const messages = chatData.messages;
+                messages.reverse().forEach(function (item) {
+                    broadcastMessage(item)
+                });
+            }
+
+            scrollToBottom();
+
+        };
+
+        chatSocket.onclose = function (e) {
+            /*if (e.wasClean) {
+                console.error(`"Connection closed cleanly, code=${e.code} reason=${e.reason}"`);
+            } else {
+                console.error("Connection died");
+            }*/
+            console.error(e);
+            console.error('Chat socket closed unexpectedly');
+            // connection closed, discard old websocket and create a new one in 5s
+            chatSocket = null
+            //setTimeout(loadMessages(id), 5000);
+        };
+
+    }
+
+    function broadcastMessage(item) {
+        // create a new div element 
+        let newDiv = document.createElement("div");
+        // and give it some content 
+
+        if (item.image) {
+            msg =
+                `<img class="mfp-zoom" onclick="magnificPopup(this);" id="chat-image-${item.id}" src="${item.image}"> ${item.message}`;
+        } else {
+            msg = `${item.message}`;
+        }
+
+        var is_read = `<i class="fas fa-check ml-1" style="font-size: 0.6rem;"></i>`
+        if (item.is_read) {
+            is_read = `<i class="fas fa-check-double c-read ml-1"></i>`
+        }
+
+        if (item.user == user_id) {
+            var msg1 = `<div class="direct-chat-msg right">
+                        <div class="direct-chat-infos clearfix">
+                            <span class="direct-chat-name float-right">You</span>
+                        </div>
+                        <img class="direct-chat-img" src="${user_avatar}" alt="${user_avatar}">
+                        <div class="direct-chat-text" style="margin-left: 50%;">
+                            ${msg}
+                    
+                            <div class="direct-chat-infos clearfix">
+                                <span class="float-right text-white">
+                                    ${getTime(item.created)}
+                                    ${is_read}
+                                </span>
+                            </div>
+                        </div>
+                    </div>`
+        } else {
+            var msg1 = `<div class="direct-chat-msg">
+                        <div class="direct-chat clearfix">
+                            <span class="direct-chat-name float-left">${item.nama}</span>
+                        </div>
+                        <img class="direct-chat-img" src="${member_avatar}" alt="${member_avatar}">
+                        <div class="direct-chat-text" style="margin-right:50%;">
+                            ${msg}
+
+                            <div class="direct-chat-infos clearfix mt-1">
+                                <span class="direct-chat-timestamp float-left">
+                                    ${getTime(item.created)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>`
+        }
+
+        if (item.created) {
+            showDatesWeekDays(item.created)
+        } else {
+            showDatesWeekDays(new Date())
+        }
+
+        newDiv.innerHTML = msg1;
+
+        // add the newly created element and its content into the DOM 
+        let currentDiv = document.getElementById("new-message-chat");
+        let parentDiv = currentDiv.parentNode;
+        parentDiv.insertBefore(newDiv, currentDiv);
+    }
+
+    $("#btnAttach").click(function () {
+        $("#fileinput").click();
+    });
+
+    messageInputDom.onkeyup = function (e) {
+        if (e.keyCode === 13) { // enter, return
+            e.preventDefault();
+            document.querySelector('#chat-message-submit').click();
+        }
+    }
+
+    document.querySelector('#chat-message-submit').onclick = function (e) {
+        const message = messageInputDom.value;
+        if (message.trim().length != 0) {
+            e.preventDefault();
+
+            chatSocket.send(JSON.stringify({
+                'command': 'new_message',
+                'message': message,
+                'message_type': 'text',
+                'member_is_online': memberIsOnline,
+            }));
+
+            messageInputDom.value = '';
+            scrollToBottom();
+            focusMessageBox();
+
+            //clearTimeout(isNotTyping);
+            //sendIsNotTyping();
+        }
+
+    };
+
+    document.querySelector('#chat-message-input').onpaste = function (e) {
+        let item = e.clipboardData.items[0];
+        if (item.type.includes('image')) {
+            let blob = item.getAsFile();
+
+            //Create an img object
+            img = new Image();
+
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                img.src = event.target.result;
+                //document.getElementById("snipped-big-img").src = event.target.result;
+            };
+
+            reader.readAsDataURL(blob);
+
+            //  Execute after the base64 address image is loaded
+            compressedImage(img, 'snipped-big-img');
+
+            imagePickerSuccess();
+        }
+    };
+
+    document.getElementById('fileinput').addEventListener('change', function (event) {
+        const [file] = fileinput.files
+        if (file) {
+            //Create an img object
+            img = new Image();
+
+            var reader = new FileReader();
+            reader.onload = function (event) {
+                img.src = event.target.result;
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+
+            //  Execute after the base64 address image is loaded
+            compressedImage(img, 'snipped-big-img');
+
+            imagePickerSuccess();
+        }
+    });
+
+    function sendImage() {
+        chatSocket.send(JSON.stringify({
+            'command': 'new_message',
+            'message': document.querySelector('#add-caption-input').value,
+            'message_type': 'image',
+            'image': document.querySelector('#snipped-big-img').src,
+            'member_is_online': memberIsOnline,
+        }));
+
+        document.querySelector('#add-caption-input').value = '';
+    }
+
+    function compressedImage(img, target) {
+        img.onload = function () {
+            //  The canvas needed to zoom the picture (can also be directly defined in the DOM canvas tag, so that the compressed picture can be displayed directly without converting to base64)
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+
+            //  Image original size
+            var originWidth = this.width;
+            var originHeight = this.height;
+
+            //  Maximum size limit, image compression can be achieved by setting width and height
+            var maxWidth = 960,
+                maxHeight = 540;
+            //  Target size
+            var targetWidth = originWidth,
+                targetHeight = originHeight;
+            //  The image size exceeds the limit of 300x300
+            if (originWidth > maxWidth || originHeight > maxHeight) {
+                if (originWidth / originHeight > maxWidth / maxHeight) {
+                    //  Wider, limit size according to width
+                    targetWidth = maxWidth;
+                    targetHeight = Math.round(maxWidth * (originHeight / originWidth));
+                } else {
+                    targetHeight = maxHeight;
+                    targetWidth = Math.round(maxHeight * (originWidth / originHeight));
+                }
+            }
+            //  Canvas zoom the picture
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            //  Clear canvas
+            context.clearRect(0, 0, targetWidth, targetHeight);
+            //  Image Compression
+            context.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+            var base64 = canvas.toDataURL('image/jpeg', 0.92); //base64 format
+
+            document.getElementById(target).src = base64;
+        };
+    }
+
+    //Convert base64 to blob
+    function dataURLtoBlob(dataurl) {
+        var arr = dataurl.split(','),
+            mime = arr[0].match(/:(.*?);/)[1],
+            bstr = atob(arr[1]),
+            n = bstr.length,
+            u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], {
+            type: mime
+        });
+    };
+
+    //Convert blob to file
+    function blobToFile(theBlob, fileName) {
+        theBlob.lastModifiedDate = new Date();
+        theBlob.name = fileName;
+        return theBlob;
+    };
+
+    function goRoomMsg() {
+        document.querySelector('#fileinput').value = '';
+        document.querySelector('#add-caption-input').value = '';
+        document.querySelector('#room-preview-img').style.display = 'none';
+        document.querySelector('#chat-messages').style.display = 'block';
+        document.querySelector('#msg-input').style.display = 'block';
+
+        focusMessageBox();
+        scrollToBottom();
+    }
+
+    function imagePickerError() {
+        document.querySelector('#chat_error').style.display = 'block';
+        document.querySelector('.preview-img__snipped-big__border').style.display = 'none';
+        document.querySelector('.preview-img__caption').style.display = 'none';
+        document.querySelector('#room-preview-img').style.display = 'grid';
+        document.querySelector('#chat-messages').style.display = 'none';
+        document.querySelector('#msg-input').style.display = 'none';
+    }
+
+    function imagePickerSuccess() {
+        document.querySelector('#chat_error').style.display = 'none';
+        document.querySelector('.preview-img__snipped-big__border').style.display = 'grid';
+        document.querySelector('.preview-img__caption').style.display = 'grid';
+        document.querySelector('#room-preview-img').style.display = 'grid';
+        document.querySelector('#chat-messages').style.display = 'none';
+        document.querySelector('#msg-input').style.display = 'none';
+        document.querySelector('#add-caption-input').focus();
+
+        focusMessageBox();
+    }
+
+    function sendIsTypingToUser() {
+        if (!isTyping) {
+            chatSocket.send(JSON.stringify({
+                'command': 'typing',
+                'typing': true,
+            }));
+            isTyping = true
+        }
+    }
+
+    function sendIsNotTyping() {
+        chatSocket.send(JSON.stringify({
+            'command': 'typing',
+            'typing': false,
+        }));
+        isTyping = false
+    }
+
+    document.getElementById('btnClosePreviewImg').onclick = function (e) {
+        goRoomMsg();
+    }
+
+    document.getElementById('btnSendImg').onclick = function (e) {
+        sendImage();
+        goRoomMsg();
+    }
+
+    function getTime(msg_time) {
+        //console.log(msg_time)
+        //var _today = moment(new Date(), 'YYYY-MM-DD hh:mm:ss');
+        var _today = moment.utc(new Date());
+        //console.log(_today.local())
+        if (msg_time) {
+            //console.log(moment(msg_time).format('YYYY-MM-DD hh:mm:ss'));
+            // define as Date so we can convert to acceptable date time format (with out letter T, ex. 2020-10-10T06:50:14.751 )
+            //temp = new Date(msg_time);
+            //temp = moment.utc(msg_time, 'YYYY-MM-DD hh:mm:ss');
+            temp = moment.utc(new Date(msg_time));
+
+            // suffix UTC so it will render as local time when it use toLocalString
+            _today = temp;
+        }
+
+        // format & render to local time
+        let time = _today.local().format('LT')
+        return time
+
+    }
+
+    function showDatesWeekDays(date_created) {
+        // add the newly created element and its content into the DOM 
+        dt = new Date(date_created)
+        //dtUTC = moment.utc(moment(date_created)).format()
+        //console.log("date_created: ", dt);
+        //console.log("date_created UTC: ", dtUTC);
+
+        if (!tempDaysWeekdays.includes(dt.toLocaleDateString())) {
+            let newDiv = document.createElement("div");
+            let currentDiv = document.getElementById("new-message-chat");
+            let parentDiv = currentDiv.parentNode;
+            let days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+            if (dt.toDateString() == new Date().toDateString()) {
+                // display TODAY in message
+                date_weekday = 'TODAY';
+            } else if (dt > getDateBefore()) {
+                // display week day in message
+                date_weekday = days[dt.getDay()].toUpperCase()
+            } else {
+                // display date in message
+                //date_weekday = dt.toLocaleDateString();
+                date_weekday = moment(dt).format("MMM DD, YYYY");
+            }
+
+            newDiv.style.display = "grid";
+            newDiv.innerHTML = `<div class="badge badge-secondary date_weekday">${date_weekday}</div>`
+            parentDiv.insertBefore(newDiv, currentDiv);
+
+            tempDaysWeekdays.push(dt.toLocaleDateString())
+        }
+
+    }
+
+    function getDateBefore(days = 7) {
+        // calculate the last 7 days date
+        // 7 (days) * 24 (hours) * 60 (minutes) * 60 (seconds) * 1000 (milliseconds ) = 604800000 or 7 days in milliseconds.                
+        daysInMs = days * 24 * 60 * 60 * 1000
+        return new Date(Date.now() - daysInMs)
+    }
+
+    function magnificPopup(image) {
+        //console.log(image.id)
+        var src = image.src;
+        $.magnificPopup.open({
+            items: {
+                src: src
+            },
+            type: 'image'
+        });
+    }
+
+    $('.btn_hapus_chat a').click(function (e) {
+        e.preventDefault();
+        var _id = $(this).data("id");
+        //console.log(_id);
+
+        iziToast.question({
+            color: 'dark',
+            timeout: 20000,
+            close: false,
+            overlay: true,
+            displayMode: 'once',
+            layout: 2,
+            zindex: 999,
+            title: 'Warning!',
+            message: 'Apakah Anda yakin ingin hapus data ini?',
+            position: 'center',
+            progressBarColor: 'rgb(0, 255, 184)',
+            buttons: [
+                ['<button class="btn"><b>Lanjut</b></button>', function (instance,
+                    toast) {
+
+                    instance.hide({
+                        transitionOut: 'fadeOut'
+                    }, toast, 'button');
+
+                    var url = "{% url 'ajax_delete_chat' 1 %}".replace('1', _id);
+                    //console.log(url);
+
+                    $.ajax({
+                        url: url,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        type: 'POST',
+                        dataType: 'json',
+                        success: function (result) {
+                            document.location.href =
+                                "{% url 'chat' %}";
+                        },
+                        error: function (err) {
+                            //console.log(err.responseJSON.error);
+                            iziToast.error({
+                                title: 'Error',
+                                message: err.responseJSON.error,
+                                position: 'topRight',
+                            });
+                        }
+                    });
+
+
+                }, true],
+                ['<button class="btn ml-2">Batal</button>', function (instance, toast) {
+
+                    instance.hide({
+                        transitionOut: 'fadeOut'
+                    }, toast, 'button');
+
+                }],
+            ],
+        });
+
+    });
+</script>
+{% endblock %}

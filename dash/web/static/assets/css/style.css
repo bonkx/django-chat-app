@@ -1,0 +1,10 @@
+.has-error .help-block {
+  color: red;
+}
+
+.center-cropped {
+  height: 168px;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+}

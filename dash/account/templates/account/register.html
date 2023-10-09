@@ -1,0 +1,59 @@
+{% extends "partials/base_full.html" %}
+{% load bootstrap3 %}
+{% block title %}Create an account{% endblock %}
+
+{% block css %}
+{% endblock css %}
+
+{% block content %}
+<div class="login-box">
+
+    <div class="card card-outline card-primary">
+        <div class="card-header text-center">
+            <a href="{% url 'home' %}" class="h1"><b>Chat</b>App</a>
+        </div>
+        <div class="card-body">
+            <p class="login-box-msg">Register a new membership</p>
+
+            <form action="." method="post" class="form">
+                {% csrf_token %}
+                {% bootstrap_form user_form %}
+
+                <div class="row">
+                    <div class="col-8">
+                        <div class="icheck-primary">
+                            <input type="checkbox" id="agreeTerms" name="terms" value="agree">
+                            <label for="agreeTerms">
+                                I agree to the <a href="#">terms</a>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- /.col -->
+                    <div class="col-4">
+                        <button type="submit" class="btn btn-primary btn-block">Register</button>
+                    </div>
+                    <!-- /.col -->
+                </div>
+            </form>
+
+            <div class="social-auth-links text-center">
+                <a href="#" class="btn btn-block btn-primary">
+                    <i class="fab fa-facebook mr-2"></i>
+                    Sign up using Facebook
+                </a>
+                <a href="#" class="btn btn-block btn-danger">
+                    <i class="fab fa-google-plus mr-2"></i>
+                    Sign up using Google+
+                </a>
+            </div>
+
+            <a href="{% url 'login' %}" class="text-center">I already have a membership</a>
+        </div>
+        <!-- /.form-box -->
+    </div>
+    <!-- /.card -->
+
+</div>
+<!-- /.login-box -->
+
+{% endblock %}

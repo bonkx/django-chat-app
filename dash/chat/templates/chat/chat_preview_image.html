@@ -1,0 +1,47 @@
+{% load static %}
+<div class="room-container__preview-img">
+
+    <div class="hiddenfile">
+        <input name="fileinput" type="file" id="fileinput" accept="image/*" />
+    </div>
+
+    <div id='room-preview-img' class="preview-img-box preview-img">
+
+        <div class="preview-img__header__small">
+            <div class="preview-img__header__close">
+                <svg id="btnClosePreviewImg" viewBox="0 0 24 24" width="24" height="24" class="">
+                    <path fill="currentColor"
+                        d="M19.1 17.2l-5.3-5.3 5.3-5.3-1.8-1.8-5.3 5.4-5.3-5.3-1.8 1.7 5.3 5.3-5.3 5.3L6.7 19l5.3-5.3 5.3 5.3 1.8-1.8z">
+                    </path>
+                </svg>
+            </div>
+        </div>
+
+        <div class="preview-img__snipped-big mx-auto d-block">
+            <div class='preview-img__snipped-big__border'>
+                <img id='snipped-big-img' class="mklbItem">
+            </div>
+
+            <div id="chat_error" class="chat-info">
+                <img src="{% static 'assets/img/uploading.gif' %}" style="height:200px;">
+                <div class="alert alert-danger" role="alert">Oops...<br>Please select image size <br>less than <b>500
+                        KB</b></div>
+            </div>
+
+        </div>
+
+        <div class="preview-img__caption">
+
+            <div class="input-group">
+                <input id="add-caption-input" type="text" placeholder="Type a caption..." class="form-control">
+                <span class="input-group-append">
+                    <button id="btnSendImg" type="submit" class="btn btn-success">
+                        <i class="far fa-paper-plane mr-1"></i> Send
+                    </button>
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,96 @@
+{% extends "partials/base.html" %}
+{% load static %}
+
+{% block title %}Encryption{% endblock %}
+{% block content %}
+
+<!-- Content Header (Page header) -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Encryption</h1>
+            </div>
+            <!-- /.col -->
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{% url "home" %}">Home</a></li>
+                    <li class="breadcrumb-item active">Encryption</li>
+                </ol>
+            </div>
+            <!-- /.col -->
+        </div>
+        <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+
+        <!-- Info boxes -->
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-6">
+
+                <form id="searchForm" action="" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="room-name-input">What string would you like to encrypt?</label>
+                        <input class="form-control" id="q" type="text" name="q" value="{{ q }}"
+                            placeholder="Type a string" autocomplete="q" required>
+                    </div>
+                    <input id="room-name-submit" class="btn btn-success" type="submit" value="Enter"/>
+
+                </form>
+
+                <div class="clearfix hidden-md-up"></div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            Result
+                        </h3>
+                    </div>
+
+                    {% if encrypted_string != null %}
+
+                    <div class="card-body">
+                        <dl>
+                            <dt>Origin String</dt>
+                            <dd>{{q}}</dd>
+
+                            <dt>Encrypt Result</dt>
+                            <dd>{{encrypted_string}}</dd>
+
+                            <dt>Decrypt Result</dt>
+                            <dd>{{decrypted_string}}</dd>
+                        </dl>
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+            <!-- /.col -->
+
+        </div>
+        <!-- /.row -->
+
+
+    </div>
+    <!--/. container-fluid -->
+</section>
+<!-- /.content -->
+
+{% endblock %}
+
+
+{% block js %}
+<script>
+    $("#q").focus();
+</script>
+{% endblock %}
