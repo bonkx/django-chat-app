@@ -18,6 +18,25 @@ With Redis, Celery, Celery-beat, Uvicorn
 
 ---
 
+## How to Run
+
+```bash
+# clone the repo
+$ git clone repo
+
+# go into repo's directory
+$ cd repo
+
+# copy and edit env file
+$ cp .env.example .env
+
+# build docker
+$ make build
+
+# start docker
+$ make run
+```
+
 ### Credit
 
 [django-chat-room](https://github.com/twtrubiks/django-chat-room)  
