@@ -27,6 +27,7 @@ $ git clone repo
 # go into repo's directory
 $ cd repo
 
+# generate your RSA Private and Public Key
 # copy and edit env file
 $ cp .env.example .env
 

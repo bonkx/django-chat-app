@@ -11,15 +11,13 @@ from django.conf import settings
 
 def _getPrivateKey():
     # Load private key previouly generated
-    with open(settings.MY_PRIVATE_PEM, "r") as myfile:
-        private_key = RSA.importKey(myfile.read())
+    private_key = RSA.importKey(settings.RSA_PRIVATE_KEY)
     return private_key
 
 
 def _getPublicKey():
     # Load private key previouly generated
-    with open(settings.MY_PUBLIC_PEM, "r") as myfile:
-        public_key = RSA.importKey(myfile.read())
+    public_key = RSA.importKey(settings.RSA_PUBLIC_KEY)
     return public_key
 
 

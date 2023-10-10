@@ -168,5 +168,5 @@ CHANNEL_LAYERS = {
 DATETIME_FORMAT = '%H:%M'
 TABLE_PAGINATION_CST = 25
 
-MY_PRIVATE_PEM = os.path.join(BASE_DIR, 'dash/prvt.key')
-MY_PUBLIC_PEM = os.path.join(BASE_DIR, 'dash/pub.pub')
+RSA_PRIVATE_KEY = os.environ.get("RSA_PRIVATE_KEY", "")
+RSA_PUBLIC_KEY = os.environ.get("RSA_PUBLIC_KEY", "")
